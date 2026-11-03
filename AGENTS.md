@@ -65,7 +65,8 @@ This is graded coursework, and **the student is the one being graded**. The brie
   - Clerk dev instance rate-limits sign-ins (503 "Rate exceeded") after many e2e runs; space them out.
   - **Still to do:** Step 5 Ask Your Agent (trace one update).
 
-**Next:** Step 6: the student merges the PRs, imports into Vercel with the 4 env vars set **before** the first build, and has a classmate test it. README.
+- **Step 6 (deploy):** PRs #1 (`feature/live-page`) and #2 (`fix/userbutton-hydration`) merged by the student. Deployed at https://dbs-p5.vercel.app. The first deploys failed because the Supabase env vars weren't reaching the build (prerendering /live threw); now a missing var shows a "Not configured" panel instead. Both e2e tests pass against production.
+  - **Student still to do:** classmate test; spending limits and alerts on Supabase, Vercel and Clerk; the Step 6 quiz; submit both URLs.
 
 **Open decisions:** none.
 
@@ -73,16 +74,16 @@ This is graded coursework, and **the student is the one being graded**. The brie
 
 ## 1. Requirements checklist (all graded)
 
-- [ ] **Live source:** one source that changes on its own. The agent called it twice, a few minutes apart, and showed the diff.
-- [ ] **Data-flow chart:** a high-level chart, made **before** worker or page code (`docs/data-flow.md`, Mermaid).
-- [ ] **Worker:** a Supabase Edge Function in `supabase/functions/`, run by Supabase Cron every ~10 s. It upserts only changed rows and writes a row to a `worker_runs` table on every run (time, ok/error, rows changed).
-- [ ] **Worker test:** runs the worker's logic on a saved copy of the source response (a fixture) and checks what it would save. The student can explain what it checks.
-- [ ] **Live page:** updates without a refresh via Supabase Realtime and shows how fresh the data is. It has these states: **loading**, **fresh**, **stale** (older than a few missed runs), and **down** (the last run failed).
-- [ ] **Personal:** each user chooses what they follow. RLS on the follows table: users see and change only their own rows.
+- [x] **Live source:** one source that changes on its own. The agent called it twice, a few minutes apart, and showed the diff.
+- [x] **Data-flow chart:** a high-level chart, made **before** worker or page code (`docs/data-flow.md`, Mermaid).
+- [x] **Worker:** a Supabase Edge Function in `supabase/functions/`, run by Supabase Cron every ~10 s. It upserts only changed rows and writes a row to a `worker_runs` table on every run (time, ok/error, rows changed).
+- [x] **Worker test:** runs the worker's logic on a saved copy of the source response (a fixture) and checks what it would save. The student can explain what it checks.
+- [x] **Live page:** updates without a refresh via Supabase Realtime and shows how fresh the data is. It has these states: **loading**, **fresh**, **stale** (older than a few missed runs), and **down** (the last run failed).
+- [x] **Personal:** each user chooses what they follow. RLS on the follows table: users see and change only their own rows.
 - [ ] **Deployed:** page on Vercel with env vars set, worker running. A classmate signs in, follows something, and watches it update.
-- [ ] **UI/UX:** designed states, clear freshness, a sensible flow.
-- [ ] `tsconfig.json` **excludes `supabase`** so the Next.js build doesn't type-check the Deno code.
-- [ ] `README.md` and a commit history that shows progress.
+- [x] **UI/UX:** designed states, clear freshness, a sensible flow.
+- [x] `tsconfig.json` **excludes `supabase`** so the Next.js build doesn't type-check the Deno code.
+- [x] `README.md` and a commit history that shows progress.
 
 ## 2. Project facts and decisions
 
@@ -95,7 +96,7 @@ This is graded coursework, and **the student is the one being graded**. The brie
 | D5 | Freshness thresholds: fresh < ?, stale after ? missed runs | **Fresh < 30 s; stale ≥ 30 s (3 missed runs); down = latest `worker_runs.ok = false`; loading before first data** |
 | D6 | Page design and look | **Bright mission control**: deep-space frame, bright accents, clean Esri street map; map + side panel. Design system in `docs/design-system.md` |
 
-- **Vercel URL:** _tbd_
+- **Vercel URL:** https://dbs-p5.vercel.app
 - **GitHub URL:** https://github.com/carnowell-uchicago/dbs-p5
 - **Supabase project ref:** `dxwqwpbtuizagvkawlhl` (shared with A4)
 
