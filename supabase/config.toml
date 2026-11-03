@@ -1,0 +1,4 @@
+# Only the settings we rely on. The worker checks the apikey header itself,
+# because the new sb_secret_ keys are not JWTs and the platform JWT check rejects them.
+[functions.iss-worker]
+verify_jwt = false
