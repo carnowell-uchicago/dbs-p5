@@ -52,7 +52,7 @@ This is graded coursework, and **the student is the one being graded**. The brie
   - Migrations (applied via MCP and saved): tables + RLS + grants, 43 seeded cities, Realtime publication, unique `source_ts`, `pg_net` + `pg_cron`, cron schedule. RLS verified with simulated users; security advisor clean.
   - `iss-worker` v1 deployed with `verify_jwt=false`. It checks the `apikey` header against `SUPABASE_SECRET_KEYS.default`; 401 without it. The student stored the secret key in Vault as `iss_worker_secret_key`; cron reads it at run time.
   - Cron job `iss-worker-every-10s` active since 04:12 UTC. First manual run: 44 rows (1 position + 43 initial statuses); the first cron run: 5 (4 flips).
-  - **Not yet:** hourly prune job (positions > 24 h, runs > 7 days). The MCP asks for confirmation on `delete` statements, and the prompt expired twice; retry with the student watching, or have the student run it in the SQL editor. Then do the Step 4 Ask Your Agent (logs of the last 3 runs).
+  - Hourly prune job `iss-prune-hourly` (positions > 24 h, runs > 7 days) scheduled. The MCP needs approval for `delete` statements; the student must approve the prompt within 2 min.
 - **Gotchas found:** Postgres rejects a subquery in a column DEFAULT (use `auth.jwt() ->> 'sub'`, not `(select auth.jwt())`); `@clerk/cli` is a placeholder; vitest 5 needs `@types/node` ≥ 22.
 
 **Next:** Step 5: Clerk link + env, Supabase client with Clerk token, follows UI, Leaflet map, Realtime subscription, freshness badge.
