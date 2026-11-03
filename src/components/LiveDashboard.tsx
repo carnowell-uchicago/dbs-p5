@@ -32,7 +32,8 @@ export default function LiveDashboard() {
   const [lastRun, setLastRun] = useState<WorkerRun | null>(null);
   const [connection, setConnection] = useState<string>("connecting");
   const [actionError, setActionError] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
+  // null until the browser's clock starts (prerendering must not freeze a time into the HTML).
+  const [now, setNow] = useState<number | null>(null);
 
   // 1. Initial load: everything the page needs, read with the signed-in user's token.
   //    Runs again when "Try again" bumps reloadKey.

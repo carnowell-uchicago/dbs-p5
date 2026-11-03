@@ -11,9 +11,9 @@ export function freshness(input: {
   loaded: boolean; // has the first fetch finished?
   latestFetchedAt: string | null; // newest iss_positions.fetched_at
   lastRunOk: boolean | null; // newest worker_runs.ok
-  now: number; // Date.now()
+  now: number | null; // Date.now(), or null before the browser clock starts
 }): { state: Freshness; ageS: number | null } {
-  if (!input.loaded) return { state: "loading", ageS: null };
+  if (!input.loaded || input.now === null) return { state: "loading", ageS: null };
 
   const ageS = input.latestFetchedAt
     ? Math.max(0, Math.floor((input.now - Date.parse(input.latestFetchedAt)) / 1000))

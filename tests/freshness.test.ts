@@ -8,6 +8,8 @@ const secondsAgo = (s: number) => new Date(now - s * 1000).toISOString();
 describe("freshness", () => {
   it("is loading until the first fetch finishes", () => {
     expect(freshness({ loaded: false, latestFetchedAt: null, lastRunOk: null, now }).state).toBe("loading");
+    // ...and until the browser clock has started.
+    expect(freshness({ loaded: true, latestFetchedAt: secondsAgo(4), lastRunOk: true, now: null }).state).toBe("loading");
   });
 
   it("is fresh when the newest position is under 30 s old and the last run worked", () => {
