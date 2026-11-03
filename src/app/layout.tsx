@@ -1,4 +1,4 @@
-import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { ClerkLoaded, ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
@@ -57,7 +57,14 @@ function AuthControls() {
       </Show>
       <Show when="signed-in">
         <Link href="/live" className={buttonClass("ghost", "sm")}>Live map</Link>
-        <UserButton />
+        {/* UserButton draws its own <div> in the browser only. Rendering it once Clerk has
+            loaded keeps the server HTML and the first browser render identical (no hydration error).
+            The fixed-size box stops the header shifting when it appears. */}
+        <span className="inline-flex size-7 items-center justify-center">
+          <ClerkLoaded>
+            <UserButton />
+          </ClerkLoaded>
+        </span>
       </Show>
     </nav>
   );
