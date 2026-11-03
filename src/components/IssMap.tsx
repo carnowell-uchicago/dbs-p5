@@ -53,10 +53,10 @@ export default function IssMap({ position, trail, cities, dimmed }: Props) {
       if (cancelled || !containerRef.current) return;
 
       map = L.map(containerRef.current, { worldCopyJump: true, minZoom: 2 }).setView([20, 0], 3);
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        subdomains: "abcd",
+      // Esri World Street Map: keyless raster tiles. (CARTO now requires an API key.)
+      L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
         maxZoom: 12,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, USGS, NGA, EPA, USDA, NPS",
       }).addTo(map);
 
       const footprint = L.circle([0, 0], { radius: 1, color: "#38e1ff", weight: 2, fillColor: "#38e1ff", fillOpacity: 0.12 }).addTo(map);

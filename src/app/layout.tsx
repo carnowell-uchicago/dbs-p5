@@ -34,8 +34,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <footer className="border-t border-cyan/10 px-4 py-3 text-center text-xs text-dim">
             Position data from{" "}
             <a href="https://wheretheiss.at" className="text-cyan underline underline-offset-2">Where the ISS At?</a>
-            {" · "}Map © <a href="https://www.openstreetmap.org/copyright" className="text-cyan underline underline-offset-2">OpenStreetMap</a> contributors, ©{" "}
-            <a href="https://carto.com/attributions" className="text-cyan underline underline-offset-2">CARTO</a>
+            {" · "}Map tiles ©{" "}
+            <a href="https://www.esri.com" className="text-cyan underline underline-offset-2">Esri</a>
           </footer>
         </ClerkProvider>
       </body>
