@@ -2,14 +2,16 @@
 
 import type { LatLngTuple, Map as LeafletMap, Marker, Circle, Polyline, LayerGroup } from "leaflet";
 import { useEffect, useRef, useState } from "react";
+import { predict, type Fix } from "@/lib/predict";
 
 export type MapCity = { id: string; name: string; lat: number; lon: number; overhead: boolean };
 
 type Props = {
-  position: { latitude: number; longitude: number; footprint_km: number } | null;
+  position: (Fix & { footprint_km: number }) | null; // newest real position
+  previous: Fix | null; // the one before it, for the velocity
   trail: LatLngTuple[]; // oldest first
   cities: MapCity[];
-  dimmed: boolean; // stale or down: show the last known position, faded
+  live: boolean; // fresh data: predict between updates. Stale/down: freeze and fade.
 };
 
 type Layers = {
@@ -38,11 +40,15 @@ function splitAtDateLine(points: LatLngTuple[]): LatLngTuple[][] {
   return segments;
 }
 
-export default function IssMap({ position, trail, cities, dimmed }: Props) {
+export default function IssMap({ position, previous, trail, cities, live }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const layersRef = useRef<Layers | null>(null);
   const [ready, setReady] = useState(false);
   const [followIss, setFollowIss] = useState(true);
+  const followRef = useRef(followIss);
+  useEffect(() => {
+    followRef.current = followIss;
+  }, [followIss]);
 
   // Create the map once. Leaflet touches `window`, so it's imported here, in the browser only.
   useEffect(() => {
@@ -74,22 +80,51 @@ export default function IssMap({ position, trail, cities, dimmed }: Props) {
       layersRef.current = { L, map, marker, footprint, trail: trailLine, cities: cityLayer };
       setReady(true);
     })();
+
+    // Leaflet only loads tiles for the size it thinks it is. Tell it whenever the
+    // box changes (window resize, panel growing), or new areas stay gray.
+    const observer = new ResizeObserver(() => layersRef.current?.map.invalidateSize());
+    if (containerRef.current) observer.observe(containerRef.current);
+
     return () => {
       cancelled = true;
+      observer.disconnect();
       map?.remove();
       layersRef.current = null;
     };
   }, []);
 
-  // Each new position: move the marker and footprint, and pan if following.
+  // Move the marker and footprint. While the data is live, an animation loop
+  // dead-reckons between the 10 s updates (predict()), so the ISS glides instead
+  // of jumping. When data is stale or down, it stays frozen at the last real fix.
   useEffect(() => {
     const layers = layersRef.current;
     if (!ready || !layers || !position) return;
-    const here: LatLngTuple = [position.latitude, position.longitude];
-    layers.marker.setLatLng(here);
-    layers.footprint.setLatLng(here).setRadius((position.footprint_km / 2) * 1000); // km diameter -> m radius
-    if (followIss) layers.map.panTo(here, { animate: true, duration: 1.5 });
-  }, [ready, position, followIss]);
+    layers.footprint.setRadius((position.footprint_km / 2) * 1000); // km diameter -> m radius
+
+    const receivedAt = performance.now();
+    let frame = 0;
+    let lastDraw = 0;
+    const draw = (t: number) => {
+      if (t - lastDraw >= 50) { // ~20 updates a second is plenty smooth
+        lastDraw = t;
+        const guess = live ? predict(previous, position, (t - receivedAt) / 1000) : null;
+        const here: LatLngTuple = guess ? [guess.latitude, guess.longitude] : [position.latitude, position.longitude];
+        layers.marker.setLatLng(here);
+        layers.footprint.setLatLng(here);
+        if (followRef.current) layers.map.panTo(here, { animate: false });
+      }
+      if (live) frame = requestAnimationFrame(draw);
+    };
+    frame = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(frame);
+  }, [ready, position, previous, live]);
+
+  // Re-centre right away when the user turns following back on.
+  useEffect(() => {
+    const layers = layersRef.current;
+    if (followIss && layers) layers.map.panTo(layers.marker.getLatLng(), { animate: true });
+  }, [followIss]);
 
   useEffect(() => {
     const layers = layersRef.current;
@@ -119,13 +154,22 @@ export default function IssMap({ position, trail, cities, dimmed }: Props) {
   }, [ready, cities]);
 
   return (
-    <div className="relative h-full min-h-[22rem] overflow-hidden rounded-2xl border border-cyan/25">
+    <div className="relative h-full min-h-0 overflow-hidden rounded-2xl border border-cyan/25">
       <div
         ref={containerRef}
-        className={`h-full w-full transition-[filter] duration-700 ${dimmed ? "grayscale-[70%] brightness-75" : ""}`}
+        className={`h-full w-full transition-[filter] duration-700 ${live ? "" : "grayscale-[70%] brightness-75"}`}
         role="region"
         aria-label="Live map of the International Space Station"
       />
+      <ul
+        aria-label="Map legend"
+        className="pointer-events-none absolute bottom-3 left-3 z-[1000] space-y-1 rounded-xl bg-space-900/85 px-3 py-2 text-xs text-star shadow-lg ring-1 ring-cyan/30"
+      >
+        <li className="flex items-center gap-2"><span className="iss-marker !size-3 !border-2 !animate-none" aria-hidden /> ISS{live ? " (smoothed between updates)" : ", last known position"}</li>
+        <li className="flex items-center gap-2"><span className="inline-block size-3 rounded-full border-2 border-cyan bg-cyan/20" aria-hidden /> Visible from here (ISS above the horizon)</li>
+        <li className="flex items-center gap-2"><span className="inline-block h-0 w-3 border-t-2 border-dashed border-[#7c3aed]" aria-hidden /> Path, last hour</li>
+        <li className="flex items-center gap-2"><span className="city-pin !size-2.5" aria-hidden /> Your cities <span className="city-pin overhead !size-2.5" aria-hidden /> overhead</li>
+      </ul>
       {!followIss && (
         <button
           onClick={() => setFollowIss(true)}

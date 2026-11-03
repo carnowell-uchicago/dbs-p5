@@ -14,7 +14,7 @@ import type { MapCity } from "./IssMap";
 // Leaflet needs `window`, so the map renders in the browser only.
 const IssMap = dynamic(() => import("./IssMap"), {
   ssr: false,
-  loading: () => <div className="h-full min-h-[22rem] animate-pulse rounded-2xl bg-space-800/60" />,
+  loading: () => <div className="h-full animate-pulse rounded-2xl bg-space-800/60" />,
 });
 
 const TRAIL_POINTS = 360; // 1 hour at one point per 10 s (about 2/3 of an orbit)
@@ -105,6 +105,7 @@ export default function LiveDashboard() {
   }, []);
 
   const latest = positions[positions.length - 1] ?? null;
+  const previous = positions[positions.length - 2] ?? null;
   const fresh = freshness({ loaded, latestFetchedAt: latest?.fetched_at ?? null, lastRunOk: lastRun?.ok ?? null, now });
 
   const trail = useMemo<LatLngTuple[]>(() => positions.map((p) => [p.latitude, p.longitude]), [positions]);
@@ -160,9 +161,11 @@ export default function LiveDashboard() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl flex-1 gap-4 p-4 sm:p-6 lg:grid-cols-[1fr_22rem]">
-      <section className="relative flex min-h-[60vh] flex-col lg:min-h-0">
-        <IssMap position={latest} trail={trail} cities={mapCities} dimmed={fresh.state === "stale" || fresh.state === "down"} />
+    // Desktop: exactly one screen tall (minus header and footer); the city list
+    // scrolls inside its panel, so the map never stretches. Phones: map 60vh, page scrolls.
+    <div className="mx-auto grid w-full max-w-7xl gap-4 p-4 sm:p-6 lg:h-[calc(100dvh-6.5rem)] lg:min-h-[34rem] lg:grid-cols-[1fr_22rem]">
+      <section className="relative flex h-[60vh] flex-col lg:h-full">
+        <IssMap position={latest} previous={previous} trail={trail} cities={mapCities} live={fresh.state === "fresh"} />
         {fresh.state === "loading" && (
           <p className="pointer-events-none absolute inset-0 z-[1000] flex items-center justify-center font-mono text-sm text-star">
             Locating the ISS…
@@ -170,7 +173,7 @@ export default function LiveDashboard() {
         )}
       </section>
 
-      <aside className="flex flex-col gap-4">
+      <aside className="flex min-h-0 flex-col gap-4">
         <FreshnessPanel state={fresh.state} ageS={fresh.ageS} lastRun={lastRun} connection={connection} />
         <Telemetry position={latest} loading={!loaded} />
         <CitiesPanel
@@ -268,7 +271,7 @@ function CitiesPanel(props: {
 }) {
   const [choice, setChoice] = useState("");
   return (
-    <section className="panel flex flex-col p-4" aria-label="Your cities">
+    <section className="panel flex min-h-0 flex-1 flex-col p-4" aria-label="Your cities">
       <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-cyan">Your cities</h2>
 
       {props.loading ? (
@@ -278,7 +281,7 @@ function CitiesPanel(props: {
       ) : props.myCities.length === 0 ? (
         <p className="mt-3 text-sm text-dim">Follow a city below to see how far the ISS is from it, and when it passes overhead.</p>
       ) : (
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {props.myCities.map((city) => (
             <li
               key={city.id}
