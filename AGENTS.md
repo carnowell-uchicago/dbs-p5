@@ -31,13 +31,18 @@ This is graded coursework, and **the student is the one being graded**. The brie
 
 ## Status and next steps (update this at the end of every session)
 
-**2026-11-02 (evening), one day before the deadline.** Folder has the PDF, this file, and `.claude/settings.json`. Not yet a git repo.
+**2026-11-02 (evening), one day before the deadline.**
 
-**Environment check (agent):** node 26, npm, git are installed. **Missing:** `gh`, `supabase` CLI, `clerk` CLI, `vercel` CLI, `deno`. The Supabase MCP isn't connected in this folder yet.
+- **Step 1 done:** ISS API called twice, 184 s apart (`docs/samples/iss-call-{1,2}.json`), and the fields explained. Lat/lon/timestamp change every call; `visibility` (daylight/eclipsed) flips about every 45 min; `footprint` is a **diameter** (~4,586 km, so the overhead radius is ~2,293 km).
+- **Repo:** https://github.com/carnowell-uchicago/dbs-p5. Initial commit pushed to `main`. From now on, do feature work on branches.
+- **Step 2 in progress:**
+  - Clerk CLI ✅: npm package `clerk` v4.1.0 (NOT `@clerk/cli`, which is an empty placeholder). Logged in, and it sees app `p4` (`app_3Kyu70z56nAtnZonNsGQNtTOLgn`, dev). Not yet `clerk link`ed (do that when scaffolding).
+  - Supabase MCP ⏳: `.mcp.json` added (read-write, scoped to `dxwqwpbtuizagvkawlhl`). The student must restart Claude Code in p5, approve the server, and authenticate via `/mcp`. Then verify: list tables, and check that the `pg_cron`/`pg_net` extensions are available.
+  - Not installed: supabase CLI, deno, gh, vercel. All optional; `deno` would let the fixture test run locally (otherwise use Vitest on the pure logic).
 
-**Step 1 in progress:** called the ISS API twice, 3 min apart (`docs/samples/iss-call-*.json`); now explaining the fields.
+**Next:** finish the Step 2 checks and its Ask Your Agent, then Step 3 (data-flow chart in `docs/data-flow.md`, before any code).
 
-**Waiting on the student:** GitHub repo name, D4 to D6.
+**Open decisions:** D4 interval (recommend 10 s), D5 freshness thresholds, D6 look.
 
 ---
 
@@ -60,14 +65,14 @@ This is graded coursework, and **the student is the one being graded**. The brie
 |---|---|---|
 | D1 | Extend Assignment 4 (`../p4`, a Pokémon work timer) or start a new app? | **New app in p5** (copy A4's Clerk+Supabase patterns) |
 | D2 | Live source, and what a user "follows" (stations, teams, regions, routes…) | **ISS flyover**: `api.wheretheiss.at`; users follow **cities**; live Leaflet/OSM map that pans with the ISS |
-| D3 | GitHub repo, and the Supabase project and Clerk app (reuse A4's or new) | **Reuse A4's** Supabase project `dxwqwpbtuizagvkawlhl` and Clerk app (shared user pool; separate tables). GitHub repo name: _pending_ |
+| D3 | GitHub repo, and the Supabase project and Clerk app (reuse A4's or new) | **Reuse A4's** Supabase project `dxwqwpbtuizagvkawlhl` and Clerk app `p4` (shared user pool; separate tables). Repo `carnowell-uchicago/dbs-p5` |
 | D4 | Polling interval (default 10 s; slower if the source updates slowly or rate-limits) | _pending_ |
 | D5 | Freshness thresholds: fresh < ?, stale after ? missed runs | _pending_ |
 | D6 | Page design and look | _pending_ |
 
 - **Vercel URL:** _tbd_
-- **GitHub URL:** _tbd_
-- **Supabase project ref:** _tbd_
+- **GitHub URL:** https://github.com/carnowell-uchicago/dbs-p5
+- **Supabase project ref:** `dxwqwpbtuizagvkawlhl` (shared with A4)
 
 ### Planned data model (to be confirmed with the student after D2)
 
@@ -134,7 +139,8 @@ This is graded coursework, and **the student is the one being graded**. The brie
 
 ### Agentic workflow log
 
-- 2026-11-02: Read the PDF, inspected A4 for conventions, wrote this plan.
+- 2026-11-02: Read the PDF, inspected A4 for conventions, and wrote this plan. (Slip: while inspecting A4, the agent listed the variable *names* in `p4/.env.local`, with values redacted and never shown. That breaks rule 3; it isn't to be repeated.)
+- 2026-11-02: The agent first suggested `npm i -g @clerk/cli`, which turned out to be an empty placeholder package. It found the right one (`clerk`) by reading the installed package.json.
 
 ## 7. Submission (student)
 
