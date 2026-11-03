@@ -46,9 +46,16 @@ This is graded coursework, and **the student is the one being graded**. The brie
 - **Step 1 done:** ISS API called twice, 184 s apart (`docs/samples/iss-call-{1,2}.json`), and the fields explained. Lat/lon/timestamp change every call; `visibility` (daylight/eclipsed) flips about every 45 min; `footprint` is a **diameter** (~4,586 km, so the overhead radius is ~2,293 km).
 - **Repo:** https://github.com/carnowell-uchicago/dbs-p5. Initial commit pushed to `main`. From now on, do feature work on branches.
 - **Step 2 done:** Supabase MCP connected (A4 tables only; `pg_cron` 1.6.4 and `pg_net` 0.20.4 available but not installed; Vault installed). Clerk CLI logged in, not yet linked. Vercel has no CLI; the student imports the repo in Step 6. No supabase CLI, deno, or gh.
-- **Step 3 in progress** on branch `feature/data-flow`: `docs/data-flow.md` (Mermaid chart, per-arrow "what breaks", freshness states). Waiting for the student to approve the chart and do the walkthrough.
+- **Step 3 done:** `docs/data-flow.md`. The worker checks **all** catalog cities, not only followed ones (same cost; it never reads `follows`).
+- **Step 4 (worker) mostly done** on branch `feature/data-flow`:
+  - Next.js 16.4.4 scaffold; `tsconfig` excludes `supabase`. Vitest 5 (`npm test`, 8 passing) on `supabase/functions/iss-worker/logic.ts` with the `docs/samples` fixtures.
+  - Migrations (applied via MCP and saved): tables + RLS + grants, 43 seeded cities, Realtime publication, unique `source_ts`, `pg_net` + `pg_cron`, cron schedule. RLS verified with simulated users; security advisor clean.
+  - `iss-worker` v1 deployed with `verify_jwt=false`. It checks the `apikey` header against `SUPABASE_SECRET_KEYS.default`; 401 without it. The student stored the secret key in Vault as `iss_worker_secret_key`; cron reads it at run time.
+  - Cron job `iss-worker-every-10s` active since 04:12 UTC. First manual run: 44 rows (1 position + 43 initial statuses); the first cron run: 5 (4 flips).
+  - **Not yet:** hourly prune job (positions > 24 h, runs > 7 days). The MCP asks for confirmation on `delete` statements, and the prompt expired twice; retry with the student watching, or have the student run it in the SQL editor. Then do the Step 4 Ask Your Agent (logs of the last 3 runs).
+- **Gotchas found:** Postgres rejects a subquery in a column DEFAULT (use `auth.jwt() ->> 'sub'`, not `(select auth.jwt())`); `@clerk/cli` is a placeholder; vitest 5 needs `@types/node` ≥ 22.
 
-**Next:** Step 4 (worker). Scaffold Next.js first (exclude `supabase` in tsconfig), then migrations, `supabase/functions/iss-worker/`, pure logic in `supabase/functions/iss-worker/logic.ts` tested by Vitest with the `docs/samples` fixtures.
+**Next:** Step 5: Clerk link + env, Supabase client with Clerk token, follows UI, Leaflet map, Realtime subscription, freshness badge.
 
 **Open decisions:** D6 look.
 
@@ -148,6 +155,8 @@ This is graded coursework, and **the student is the one being graded**. The brie
 ### Agentic workflow log
 
 - 2026-11-02: Read the PDF, inspected A4 for conventions, and wrote this plan. (Slip: while inspecting A4, the agent listed the variable *names* in `p4/.env.local`, with values redacted and never shown. That breaks rule 3; it isn't to be repeated.)
+- 2026-11-03: Testing found that the fixture calls contain a real flip: Sydney is overhead in call 1 and not in call 2, 3 min later. The test asserts that only Sydney is rewritten.
+- 2026-11-03: The first migration failed (a subquery in a DEFAULT). It was transactional, so nothing was applied; fixed and reapplied.
 - 2026-11-02: The agent first suggested `npm i -g @clerk/cli`, which turned out to be an empty placeholder package. It found the right one (`clerk`) by reading the installed package.json.
 
 ## 7. Submission (student)
