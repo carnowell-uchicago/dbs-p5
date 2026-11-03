@@ -7,8 +7,10 @@ import { useEffect, useMemo, useState } from "react";
 // Same distance formula the worker uses to decide "overhead", so the two never disagree.
 import { distanceKm } from "../../supabase/functions/iss-worker/logic";
 import { formatAge, freshness, type Freshness } from "@/lib/freshness";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { useSupabase } from "@/lib/supabase/client";
-import type { City, CityStatus, IssPosition, WorkerRun } from "@/lib/supabase/database.types";
+import { MISSING_ENV_MESSAGE } from "@/lib/supabase/env";
+import type { City, CityStatus, Database, IssPosition, WorkerRun } from "@/lib/supabase/database.types";
 import type { MapCity } from "./IssMap";
 import { Button, Eyebrow, Panel, StatusPill, type Tone } from "./ui";
 
@@ -21,8 +23,21 @@ const IssMap = dynamic(() => import("./IssMap"), {
 const TRAIL_POINTS = 360; // 1 hour at one point per 10 s (about 2/3 of an orbit)
 
 export default function LiveDashboard() {
-  const { session } = useSession();
   const supabase = useSupabase();
+  // A deploy without the Supabase env vars still builds; it explains itself here instead.
+  if (!supabase) {
+    return (
+      <Panel role="alert" className="mx-auto mt-16 max-w-lg text-center">
+        <p className="text-lg font-semibold text-down">Not configured</p>
+        <p className="mt-2 text-sm text-muted">{MISSING_ENV_MESSAGE}</p>
+      </Panel>
+    );
+  }
+  return <Dashboard supabase={supabase} />;
+}
+
+function Dashboard({ supabase }: { supabase: SupabaseClient<Database> }) {
+  const { session } = useSession();
 
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
