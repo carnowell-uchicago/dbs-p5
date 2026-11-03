@@ -155,12 +155,11 @@ export default function IssMap({ position, previous, trail, cities, live }: Prop
 
   return (
     <div className="relative h-full min-h-0 overflow-hidden rounded-2xl border border-cyan/25">
-      <div
-        ref={containerRef}
-        className={`h-full w-full transition-[filter] duration-700 ${live ? "" : "grayscale-[70%] brightness-75"}`}
-        role="region"
-        aria-label="Live map of the International Space Station"
-      />
+      {/* The fade lives on a wrapper: Leaflet adds its own classes to the inner div,
+          and if React changed that div's className it would wipe them out (the map vanishes). */}
+      <div className={`h-full w-full transition-[filter] duration-700 ${live ? "" : "grayscale-[70%] brightness-75"}`}>
+        <div ref={containerRef} className="h-full w-full" role="region" aria-label="Live map of the International Space Station" />
+      </div>
       <ul
         aria-label="Map legend"
         className="pointer-events-none absolute bottom-3 left-3 z-[1000] space-y-1 rounded-xl bg-space-900/85 px-3 py-2 text-xs text-star shadow-lg ring-1 ring-cyan/30"
