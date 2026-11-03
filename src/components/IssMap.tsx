@@ -166,16 +166,16 @@ export default function IssMap({ position, previous, trail, cities, live }: Prop
         aria-label="Map key"
         className="pointer-events-none absolute bottom-3 left-3 z-[1000] hidden space-y-1 rounded-xl bg-surface/95 px-3 py-2 text-sm text-text shadow-lg ring-1 ring-line/60 sm:block"
       >
-        <li className="flex items-center gap-2"><span className="iss-marker !size-3 !border-2 !animate-none" aria-hidden /> ISS{live ? " (smoothed between updates)" : ", last known position"}</li>
-        <li className="flex items-center gap-2"><span className="inline-block size-3 rounded-full border-2 border-cyan bg-cyan/25" aria-hidden /> Visible from here (ISS above the horizon)</li>
+        <li className="flex items-center gap-2"><span className="iss-marker !size-3 !border-2 !animate-none" aria-hidden /> ISS{live ? "" : ", last known position"}</li>
+        <li className="flex items-center gap-2"><span className="inline-block size-3 rounded-full border-2 border-cyan bg-cyan/25" aria-hidden /> Visible from here</li>
         <li className="flex items-center gap-2"><span className="inline-block h-0 w-3 border-t-2 border-dashed border-violet" aria-hidden /> Path, last hour</li>
         <li className="flex items-center gap-2"><span className="city-pin !size-2.5" aria-hidden /> Your cities <span className="city-pin overhead !size-2.5" aria-hidden /> overhead</li>
       </ul>
       <details className="absolute bottom-3 left-3 z-[1000] max-w-[80%] rounded-xl bg-surface/95 text-sm text-text shadow-lg ring-1 ring-line/60 sm:hidden">
         <summary className={`cursor-pointer list-none rounded-xl px-3 py-2 font-semibold ${focusRing}`}>Map key</summary>
         <ul className="space-y-1 px-3 pb-2">
-        <li className="flex items-center gap-2"><span className="iss-marker !size-3 !border-2 !animate-none" aria-hidden /> ISS{live ? " (smoothed between updates)" : ", last known position"}</li>
-          <li className="flex items-center gap-2"><span className="inline-block size-3 rounded-full border-2 border-cyan bg-cyan/25" aria-hidden /> Visible from here (ISS above the horizon)</li>
+        <li className="flex items-center gap-2"><span className="iss-marker !size-3 !border-2 !animate-none" aria-hidden /> ISS{live ? "" : ", last known position"}</li>
+          <li className="flex items-center gap-2"><span className="inline-block size-3 rounded-full border-2 border-cyan bg-cyan/25" aria-hidden /> Visible from here</li>
           <li className="flex items-center gap-2"><span className="inline-block h-0 w-3 border-t-2 border-dashed border-violet" aria-hidden /> Path, last hour</li>
           <li className="flex items-center gap-2"><span className="city-pin !size-2.5" aria-hidden /> Your cities <span className="city-pin overhead !size-2.5" aria-hidden /> overhead</li>
         </ul>
