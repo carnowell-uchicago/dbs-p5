@@ -35,14 +35,12 @@ This is graded coursework, and **the student is the one being graded**. The brie
 
 - **Step 1 done:** ISS API called twice, 184 s apart (`docs/samples/iss-call-{1,2}.json`), and the fields explained. Lat/lon/timestamp change every call; `visibility` (daylight/eclipsed) flips about every 45 min; `footprint` is a **diameter** (~4,586 km, so the overhead radius is ~2,293 km).
 - **Repo:** https://github.com/carnowell-uchicago/dbs-p5. Initial commit pushed to `main`. From now on, do feature work on branches.
-- **Step 2 in progress:**
-  - Clerk CLI ✅: npm package `clerk` v4.1.0 (NOT `@clerk/cli`, which is an empty placeholder). Logged in, and it sees app `p4` (`app_3Kyu70z56nAtnZonNsGQNtTOLgn`, dev). Not yet `clerk link`ed (do that when scaffolding).
-  - Supabase MCP ⏳: `.mcp.json` added (read-write, scoped to `dxwqwpbtuizagvkawlhl`). The student must restart Claude Code in p5, approve the server, and authenticate via `/mcp`. Then verify: list tables, and check that the `pg_cron`/`pg_net` extensions are available.
-  - Not installed: supabase CLI, deno, gh, vercel. All optional; `deno` would let the fixture test run locally (otherwise use Vitest on the pure logic).
+- **Step 2 done:** Supabase MCP connected (A4 tables only; `pg_cron` 1.6.4 and `pg_net` 0.20.4 available but not installed; Vault installed). Clerk CLI logged in, not yet linked. Vercel has no CLI; the student imports the repo in Step 6. No supabase CLI, deno, or gh.
+- **Step 3 in progress** on branch `feature/data-flow`: `docs/data-flow.md` (Mermaid chart, per-arrow "what breaks", freshness states). Waiting for the student to approve the chart and do the walkthrough.
 
-**Next:** finish the Step 2 checks and its Ask Your Agent, then Step 3 (data-flow chart in `docs/data-flow.md`, before any code).
+**Next:** Step 4 (worker). Scaffold Next.js first (exclude `supabase` in tsconfig), then migrations, `supabase/functions/iss-worker/`, pure logic in `supabase/functions/iss-worker/logic.ts` tested by Vitest with the `docs/samples` fixtures.
 
-**Open decisions:** D4 interval (recommend 10 s), D5 freshness thresholds, D6 look.
+**Open decisions:** D6 look.
 
 ---
 
@@ -66,21 +64,21 @@ This is graded coursework, and **the student is the one being graded**. The brie
 | D1 | Extend Assignment 4 (`../p4`, a Pokémon work timer) or start a new app? | **New app in p5** (copy A4's Clerk+Supabase patterns) |
 | D2 | Live source, and what a user "follows" (stations, teams, regions, routes…) | **ISS flyover**: `api.wheretheiss.at`; users follow **cities**; live Leaflet/OSM map that pans with the ISS |
 | D3 | GitHub repo, and the Supabase project and Clerk app (reuse A4's or new) | **Reuse A4's** Supabase project `dxwqwpbtuizagvkawlhl` and Clerk app `p4` (shared user pool; separate tables). Repo `carnowell-uchicago/dbs-p5` |
-| D4 | Polling interval (default 10 s; slower if the source updates slowly or rate-limits) | _pending_ |
-| D5 | Freshness thresholds: fresh < ?, stale after ? missed runs | _pending_ |
+| D4 | Polling interval (default 10 s; slower if the source updates slowly or rate-limits) | **10 s** |
+| D5 | Freshness thresholds: fresh < ?, stale after ? missed runs | **Fresh < 30 s; stale ≥ 30 s (3 missed runs); down = latest `worker_runs.ok = false`; loading before first data** |
 | D6 | Page design and look | _pending_ |
 
 - **Vercel URL:** _tbd_
 - **GitHub URL:** https://github.com/carnowell-uchicago/dbs-p5
 - **Supabase project ref:** `dxwqwpbtuizagvkawlhl` (shared with A4)
 
-### Planned data model (to be confirmed with the student after D2)
+### Data model (student chose: follow cities + overhead flips, 2026-11-02)
 
 - `iss_positions`: one row inserted per run (lat, lon, altitude, velocity, visibility, footprint, source timestamp). Drives the map, the trail, and freshness. Worker-only writes; authenticated users can read; added to Realtime. Prune rows older than ~24 h.
 - `cities`: a small seeded catalog (name, lat, lon). Read-only for users.
 - `city_status`: `(city_id, overhead bool, last_overhead_at)`. The worker upserts a row **only when `overhead` flips** (ISS within the footprint radius). This is the "only what changed" story. Added to Realtime.
 - Live distance to each followed city is computed **client-side** from the latest position (no per-city write every run).
-- `follows`: `(user_id text default auth.jwt()->>'sub', item_id)`. RLS: own rows only, for select, insert, and delete.
+- `follows`: `(user_id text default auth.jwt()->>'sub', city_id)`. RLS: own rows only, for select, insert, and delete.
 - `worker_runs`: `id, ran_at, ok, rows_changed, error`. Authenticated users can read it (it drives freshness and "down"). Added to Realtime.
 
 ### Environment variables (names only)
