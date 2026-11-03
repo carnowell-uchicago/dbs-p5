@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* "Bright mission control" (D6): a deep-space frame with bright accents
+   around a clean, colorful map. */
+@theme {
+  --color-space-950: #090d2b;
+  --color-space-900: #111747;
+  --color-space-800: #1b2363;
+  --color-space-700: #2a3486;
+  --color-star: #e6ebff;
+  --color-dim: #a9b3e6;
+  --color-cyan: #38e1ff;
+  --color-magenta: #ff6fd0;
+  --color-gold: #ffd34d;
+  --color-fresh: #3ef0a1;
+  --color-stale: #ffc53d;
+  --color-down: #ff6b6b;
+
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-space-950);
+  /* Nebula glow plus a few layers of tiny stars. */
+  background-image:
+    radial-gradient(ellipse at 15% 10%, rgb(124 58 237 / 0.35), transparent 55%),
+    radial-gradient(ellipse at 85% 90%, rgb(56 225 255 / 0.18), transparent 50%),
+    radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+    radial-gradient(1px 1px at 140px 80px, #cfd8ff, transparent),
+    radial-gradient(1.5px 1.5px at 90px 160px, #fff, transparent),
+    radial-gradient(1px 1px at 200px 120px, #ffe9a8, transparent);
+  background-size: 100% 100%, 100% 100%, 240px 200px, 240px 200px, 240px 200px, 240px 200px;
+  background-attachment: fixed;
+  color: var(--color-star);
+}
+
+/* Panels: frosted glass over the starfield. */
+.panel {
+  background: color-mix(in srgb, var(--color-space-900) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-cyan) 22%, transparent);
+  border-radius: 1rem;
+  box-shadow: 0 0 24px rgb(56 225 255 / 0.08), inset 0 1px 0 rgb(255 255 255 / 0.04);
+  backdrop-filter: blur(6px);
+}
+
+/* The ISS marker on the map: a glowing gold dot with a pulse. */
+.iss-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--color-gold);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 0 rgb(255 211 77 / 0.7), 0 0 16px var(--color-gold);
+  animation: iss-pulse 2s ease-out infinite;
+}
+@keyframes iss-pulse {
+  to { box-shadow: 0 0 0 18px rgb(255 211 77 / 0), 0 0 16px var(--color-gold); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iss-marker { animation: none; }
+}
+
+/* Followed-city pins. */
+.city-pin {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--color-magenta);
+  border: 2px solid #fff;
+  box-shadow: 0 0 8px var(--color-magenta);
+}
+.city-pin.overhead {
+  background: var(--color-fresh);
+  box-shadow: 0 0 12px var(--color-fresh);
+}
+
+.leaflet-container {
+  background: #aad3df; /* ocean color, shown while tiles load */
+  font-family: var(--font-sans);
 }
