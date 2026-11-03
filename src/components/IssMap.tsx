@@ -95,9 +95,10 @@ export default function IssMap({ position, previous, trail, cities, live }: Prop
     };
   }, []);
 
-  // Move the marker and footprint. While the data is live, an animation loop
-  // dead-reckons between the 10 s updates (predict()), so the ISS glides instead
-  // of jumping. When data is stale or down, it stays frozen at the last real fix.
+  // Move the marker, footprint and the head of the trail. While the data is live, an
+  // animation loop dead-reckons between the 10 s updates (predict()), so the ISS glides
+  // and the path draws itself behind it. When data is stale or down, everything stays
+  // frozen at the last real fix.
   useEffect(() => {
     const layers = layersRef.current;
     if (!ready || !layers || !position) return;
@@ -113,25 +114,21 @@ export default function IssMap({ position, previous, trail, cities, live }: Prop
         const here: LatLngTuple = guess ? [guess.latitude, guess.longitude] : [position.latitude, position.longitude];
         layers.marker.setLatLng(here);
         layers.footprint.setLatLng(here);
+        // Real points, plus the marker's current spot, so the line ends under the dot.
+        layers.trail.setLatLngs(splitAtDateLine(guess ? [...trail, here] : trail));
         if (followRef.current) layers.map.panTo(here, { animate: false });
       }
       if (live) frame = requestAnimationFrame(draw);
     };
     frame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frame);
-  }, [ready, position, previous, live]);
+  }, [ready, position, previous, trail, live]);
 
   // Re-centre right away when the user turns following back on.
   useEffect(() => {
     const layers = layersRef.current;
     if (followIss && layers) layers.map.panTo(layers.marker.getLatLng(), { animate: true });
   }, [followIss]);
-
-  useEffect(() => {
-    const layers = layersRef.current;
-    if (!ready || !layers) return;
-    layers.trail.setLatLngs(splitAtDateLine(trail));
-  }, [ready, trail]);
 
   // Pins for the cities this person follows; green while the ISS is overhead.
   useEffect(() => {

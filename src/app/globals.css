@@ -83,7 +83,13 @@ body {
   box-shadow: 0 0 12px var(--color-fresh);
 }
 
+/* Dim only the map tiles so the map sits comfortably in the dark theme;
+   the ISS, footprint, trail and pins stay at full brightness on top. */
+.leaflet-tile-pane {
+  filter: brightness(0.75) saturate(0.9);
+}
+
 .leaflet-container {
-  background: #aad3df; /* ocean color, shown while tiles load */
+  background: #6f8c96; /* dimmed ocean color, shown while tiles load */
   font-family: var(--font-sans);
 }
