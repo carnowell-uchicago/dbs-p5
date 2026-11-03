@@ -1,0 +1,4 @@
+import { defineConfig } from "vitest/config";
+
+// Unit tests only; e2e/ is Playwright (npm run test:e2e).
+export default defineConfig({ test: { include: ["tests/**/*.test.ts"] } });

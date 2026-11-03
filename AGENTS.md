@@ -1,3 +1,13 @@
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
+
 # AGENTS.md: Assignment 5, Live Data System
 
 **Course:** Design, Build, Ship (MPCS 51238), Autumn 2026
@@ -35,14 +45,29 @@ This is graded coursework, and **the student is the one being graded**. The brie
 
 - **Step 1 done:** ISS API called twice, 184 s apart (`docs/samples/iss-call-{1,2}.json`), and the fields explained. Lat/lon/timestamp change every call; `visibility` (daylight/eclipsed) flips about every 45 min; `footprint` is a **diameter** (~4,586 km, so the overhead radius is ~2,293 km).
 - **Repo:** https://github.com/carnowell-uchicago/dbs-p5. Initial commit pushed to `main`. From now on, do feature work on branches.
-- **Step 2 in progress:**
-  - Clerk CLI ✅: npm package `clerk` v4.1.0 (NOT `@clerk/cli`, which is an empty placeholder). Logged in, and it sees app `p4` (`app_3Kyu70z56nAtnZonNsGQNtTOLgn`, dev). Not yet `clerk link`ed (do that when scaffolding).
-  - Supabase MCP ⏳: `.mcp.json` added (read-write, scoped to `dxwqwpbtuizagvkawlhl`). The student must restart Claude Code in p5, approve the server, and authenticate via `/mcp`. Then verify: list tables, and check that the `pg_cron`/`pg_net` extensions are available.
-  - Not installed: supabase CLI, deno, gh, vercel. All optional; `deno` would let the fixture test run locally (otherwise use Vitest on the pure logic).
+- **Step 2 done:** Supabase MCP connected (A4 tables only; `pg_cron` 1.6.4 and `pg_net` 0.20.4 available but not installed; Vault installed). Clerk CLI logged in, not yet linked. Vercel has no CLI; the student imports the repo in Step 6. No supabase CLI, deno, or gh.
+- **Step 3 done:** `docs/data-flow.md`. The worker checks **all** catalog cities, not only followed ones (same cost; it never reads `follows`).
+- **Step 4 (worker) mostly done** on branch `feature/data-flow`:
+  - Next.js 16.4.4 scaffold; `tsconfig` excludes `supabase`. Vitest 5 (`npm test`, 8 passing) on `supabase/functions/iss-worker/logic.ts` with the `docs/samples` fixtures.
+  - Migrations (applied via MCP and saved): tables + RLS + grants, 43 seeded cities, Realtime publication, unique `source_ts`, `pg_net` + `pg_cron`, cron schedule. RLS verified with simulated users; security advisor clean.
+  - `iss-worker` v1 deployed with `verify_jwt=false`. It checks the `apikey` header against `SUPABASE_SECRET_KEYS.default`; 401 without it. The student stored the secret key in Vault as `iss_worker_secret_key`; cron reads it at run time.
+  - Cron job `iss-worker-every-10s` active since 04:12 UTC. First manual run: 44 rows (1 position + 43 initial statuses); the first cron run: 5 (4 flips).
+  - Hourly prune job `iss-prune-hourly` (positions > 24 h, runs > 7 days) scheduled. The MCP needs approval for `delete` statements; the student must approve the prompt within 2 min.
+- **Gotchas found:** Postgres rejects a subquery in a column DEFAULT (use `auth.jwt() ->> 'sub'`, not `(select auth.jwt())`); `@clerk/cli` is a placeholder; vitest 5 needs `@types/node` ≥ 22.
 
-**Next:** finish the Step 2 checks and its Ask Your Agent, then Step 3 (data-flow chart in `docs/data-flow.md`, before any code).
+- **Step 5 (live page) in progress** on branch `feature/live-page` (stacked on `feature/data-flow`; neither merged yet):
+  - Clerk (proxy protects `/live`), `useSupabase()` with the Clerk token (Realtime too; `setAuth()` before subscribe), Leaflet map (Esri tiles; CARTO now needs a key), Realtime on 3 tables, freshness (tested), dead-reckoning glide (`src/lib/predict.ts`, tested), follows with optimistic UI.
+  - Design system: tokens in `globals.css`, contrast test, `src/components/ui`.
+  - Playwright: `npm run test:e2e` (`e2e/live.spec.ts`, signs in E2E_USER1 via `@clerk/testing`). Student confirmed: follows persist; the map works.
+  - **Bug found and fixed:** React overwrote the className of the div Leaflet adds classes to, so the map vanished. Leaflet's div must keep a static className.
+  - **States verified live with the student (2026-11-03 05:48–05:50 UTC):** paused cron → Stale at 30 s; `revoke insert on iss_positions from service_role` → two runs `ok=false` ("saving position: permission denied…") → Source down with the error shown; grant restored → Live at 05:50:02. Grant confirmed restored.
+  - Stability e2e (`e2e/stability.spec.ts`) passes on a production build. The dev flashing was a stale HMR tab after a dev-server restart.
+  - Clerk dev instance rate-limits sign-ins (503 "Rate exceeded") after many e2e runs; space them out.
+  - **Still to do:** Step 5 Ask Your Agent (trace one update).
 
-**Open decisions:** D4 interval (recommend 10 s), D5 freshness thresholds, D6 look.
+**Next:** Step 6: the student merges the PRs, imports into Vercel with the 4 env vars set **before** the first build, and has a classmate test it. README.
+
+**Open decisions:** none.
 
 ---
 
@@ -66,21 +91,21 @@ This is graded coursework, and **the student is the one being graded**. The brie
 | D1 | Extend Assignment 4 (`../p4`, a Pokémon work timer) or start a new app? | **New app in p5** (copy A4's Clerk+Supabase patterns) |
 | D2 | Live source, and what a user "follows" (stations, teams, regions, routes…) | **ISS flyover**: `api.wheretheiss.at`; users follow **cities**; live Leaflet/OSM map that pans with the ISS |
 | D3 | GitHub repo, and the Supabase project and Clerk app (reuse A4's or new) | **Reuse A4's** Supabase project `dxwqwpbtuizagvkawlhl` and Clerk app `p4` (shared user pool; separate tables). Repo `carnowell-uchicago/dbs-p5` |
-| D4 | Polling interval (default 10 s; slower if the source updates slowly or rate-limits) | _pending_ |
-| D5 | Freshness thresholds: fresh < ?, stale after ? missed runs | _pending_ |
-| D6 | Page design and look | _pending_ |
+| D4 | Polling interval (default 10 s; slower if the source updates slowly or rate-limits) | **10 s** |
+| D5 | Freshness thresholds: fresh < ?, stale after ? missed runs | **Fresh < 30 s; stale ≥ 30 s (3 missed runs); down = latest `worker_runs.ok = false`; loading before first data** |
+| D6 | Page design and look | **Bright mission control**: deep-space frame, bright accents, clean Esri street map; map + side panel. Design system in `docs/design-system.md` |
 
 - **Vercel URL:** _tbd_
 - **GitHub URL:** https://github.com/carnowell-uchicago/dbs-p5
 - **Supabase project ref:** `dxwqwpbtuizagvkawlhl` (shared with A4)
 
-### Planned data model (to be confirmed with the student after D2)
+### Data model (student chose: follow cities + overhead flips, 2026-11-02)
 
 - `iss_positions`: one row inserted per run (lat, lon, altitude, velocity, visibility, footprint, source timestamp). Drives the map, the trail, and freshness. Worker-only writes; authenticated users can read; added to Realtime. Prune rows older than ~24 h.
 - `cities`: a small seeded catalog (name, lat, lon). Read-only for users.
 - `city_status`: `(city_id, overhead bool, last_overhead_at)`. The worker upserts a row **only when `overhead` flips** (ISS within the footprint radius). This is the "only what changed" story. Added to Realtime.
 - Live distance to each followed city is computed **client-side** from the latest position (no per-city write every run).
-- `follows`: `(user_id text default auth.jwt()->>'sub', item_id)`. RLS: own rows only, for select, insert, and delete.
+- `follows`: `(user_id text default auth.jwt()->>'sub', city_id)`. RLS: own rows only, for select, insert, and delete.
 - `worker_runs`: `id, ran_at, ok, rows_changed, error`. Authenticated users can read it (it drives freshness and "down"). Added to Realtime.
 
 ### Environment variables (names only)
@@ -140,6 +165,11 @@ This is graded coursework, and **the student is the one being graded**. The brie
 ### Agentic workflow log
 
 - 2026-11-02: Read the PDF, inspected A4 for conventions, and wrote this plan. (Slip: while inspecting A4, the agent listed the variable *names* in `p4/.env.local`, with values redacted and never shown. That breaks rule 3; it isn't to be repeated.)
+- 2026-11-03: Forced every freshness state on the real system (cron pause, then a revoked grant) and read `worker_runs` to confirm what the page showed.
+- 2026-11-03: The student reported map flashing; logs showed ~1,500 refetches from one stale dev tab. The agent wrote a stability test and proved a production build doesn't loop.
+- 2026-11-03: The student reported the map vanishing; Playwright DOM inspection found React wiping Leaflet's classes. Fixed, with a regression check.
+- 2026-11-03: Testing found that the fixture calls contain a real flip: Sydney is overhead in call 1 and not in call 2, 3 min later. The test asserts that only Sydney is rewritten.
+- 2026-11-03: The first migration failed (a subquery in a DEFAULT). It was transactional, so nothing was applied; fixed and reapplied.
 - 2026-11-02: The agent first suggested `npm i -g @clerk/cli`, which turned out to be an empty placeholder package. It found the right one (`clerk`) by reading the installed package.json.
 
 ## 7. Submission (student)
