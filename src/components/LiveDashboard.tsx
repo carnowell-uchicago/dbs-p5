@@ -207,7 +207,7 @@ function FreshnessPanel({ state, ageS, lastRun, connection }: { state: Freshness
       </div>
       <p className="mt-3 text-sm leading-relaxed text-muted">
         {state === "loading" && "Fetching the latest position…"}
-        {state === "fresh" && "A new position arrives every 10 seconds; between updates the dot glides on its own."}
+        {state === "fresh" && "A new position arrives every 10 seconds; between updates the trajectory is calculated."}
         {state === "stale" && "No new position for 3+ runs. The worker may be paused, so the map shows the last known position."}
         {state === "down" && (
           <>
