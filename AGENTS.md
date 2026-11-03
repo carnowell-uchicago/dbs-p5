@@ -60,7 +60,10 @@ This is graded coursework, and **the student is the one being graded**. The brie
   - Design system: tokens in `globals.css`, contrast test, `src/components/ui`.
   - Playwright: `npm run test:e2e` (`e2e/live.spec.ts`, signs in E2E_USER1 via `@clerk/testing`). Student confirmed: follows persist; the map works.
   - **Bug found and fixed:** React overwrote the className of the div Leaflet adds classes to, so the map vanished. Leaflet's div must keep a static className.
-  - **Still to do:** force the stale and down states with the student; RLS two-user e2e; Step 5 Ask Your Agent (trace one update).
+  - **States verified live with the student (2026-11-03 05:48–05:50 UTC):** paused cron → Stale at 30 s; `revoke insert on iss_positions from service_role` → two runs `ok=false` ("saving position: permission denied…") → Source down with the error shown; grant restored → Live at 05:50:02. Grant confirmed restored.
+  - Stability e2e (`e2e/stability.spec.ts`) passes on a production build. The dev flashing was a stale HMR tab after a dev-server restart.
+  - Clerk dev instance rate-limits sign-ins (503 "Rate exceeded") after many e2e runs; space them out.
+  - **Still to do:** Step 5 Ask Your Agent (trace one update).
 
 **Next:** Step 6: the student merges the PRs, imports into Vercel with the 4 env vars set **before** the first build, and has a classmate test it. README.
 
@@ -162,6 +165,9 @@ This is graded coursework, and **the student is the one being graded**. The brie
 ### Agentic workflow log
 
 - 2026-11-02: Read the PDF, inspected A4 for conventions, and wrote this plan. (Slip: while inspecting A4, the agent listed the variable *names* in `p4/.env.local`, with values redacted and never shown. That breaks rule 3; it isn't to be repeated.)
+- 2026-11-03: Forced every freshness state on the real system (cron pause, then a revoked grant) and read `worker_runs` to confirm what the page showed.
+- 2026-11-03: The student reported map flashing; logs showed ~1,500 refetches from one stale dev tab. The agent wrote a stability test and proved a production build doesn't loop.
+- 2026-11-03: The student reported the map vanishing; Playwright DOM inspection found React wiping Leaflet's classes. Fixed, with a regression check.
 - 2026-11-03: Testing found that the fixture calls contain a real flip: Sydney is overhead in call 1 and not in call 2, 3 min later. The test asserts that only Sydney is rewritten.
 - 2026-11-03: The first migration failed (a subquery in a DEFAULT). It was transactional, so nothing was applied; fixed and reapplied.
 - 2026-11-02: The agent first suggested `npm i -g @clerk/cli`, which turned out to be an empty placeholder package. It found the right one (`clerk`) by reading the installed package.json.
