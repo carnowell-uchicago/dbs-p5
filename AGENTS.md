@@ -55,9 +55,16 @@ This is graded coursework, and **the student is the one being graded**. The brie
   - Hourly prune job `iss-prune-hourly` (positions > 24 h, runs > 7 days) scheduled. The MCP needs approval for `delete` statements; the student must approve the prompt within 2 min.
 - **Gotchas found:** Postgres rejects a subquery in a column DEFAULT (use `auth.jwt() ->> 'sub'`, not `(select auth.jwt())`); `@clerk/cli` is a placeholder; vitest 5 needs `@types/node` ≥ 22.
 
-**Next:** Step 5: Clerk link + env, Supabase client with Clerk token, follows UI, Leaflet map, Realtime subscription, freshness badge.
+- **Step 5 (live page) in progress** on branch `feature/live-page` (stacked on `feature/data-flow`; neither merged yet):
+  - Clerk (proxy protects `/live`), `useSupabase()` with the Clerk token (Realtime too; `setAuth()` before subscribe), Leaflet map (Esri tiles; CARTO now needs a key), Realtime on 3 tables, freshness (tested), dead-reckoning glide (`src/lib/predict.ts`, tested), follows with optimistic UI.
+  - Design system: tokens in `globals.css`, contrast test, `src/components/ui`.
+  - Playwright: `npm run test:e2e` (`e2e/live.spec.ts`, signs in E2E_USER1 via `@clerk/testing`). Student confirmed: follows persist; the map works.
+  - **Bug found and fixed:** React overwrote the className of the div Leaflet adds classes to, so the map vanished. Leaflet's div must keep a static className.
+  - **Still to do:** force the stale and down states with the student; RLS two-user e2e; Step 5 Ask Your Agent (trace one update).
 
-**Open decisions:** D6 look.
+**Next:** Step 6: the student merges the PRs, imports into Vercel with the 4 env vars set **before** the first build, and has a classmate test it. README.
+
+**Open decisions:** none.
 
 ---
 
@@ -83,7 +90,7 @@ This is graded coursework, and **the student is the one being graded**. The brie
 | D3 | GitHub repo, and the Supabase project and Clerk app (reuse A4's or new) | **Reuse A4's** Supabase project `dxwqwpbtuizagvkawlhl` and Clerk app `p4` (shared user pool; separate tables). Repo `carnowell-uchicago/dbs-p5` |
 | D4 | Polling interval (default 10 s; slower if the source updates slowly or rate-limits) | **10 s** |
 | D5 | Freshness thresholds: fresh < ?, stale after ? missed runs | **Fresh < 30 s; stale ≥ 30 s (3 missed runs); down = latest `worker_runs.ok = false`; loading before first data** |
-| D6 | Page design and look | _pending_ |
+| D6 | Page design and look | **Bright mission control**: deep-space frame, bright accents, clean Esri street map; map + side panel. Design system in `docs/design-system.md` |
 
 - **Vercel URL:** _tbd_
 - **GitHub URL:** https://github.com/carnowell-uchicago/dbs-p5
