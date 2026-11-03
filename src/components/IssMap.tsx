@@ -3,6 +3,7 @@
 import type { LatLngTuple, Map as LeafletMap, Marker, Circle, Polyline, LayerGroup } from "leaflet";
 import { useEffect, useRef, useState } from "react";
 import { predict, type Fix } from "@/lib/predict";
+import { buttonClass, focusRing } from "./ui";
 
 export type MapCity = { id: string; name: string; lat: number; lon: number; overhead: boolean };
 
@@ -65,8 +66,8 @@ export default function IssMap({ position, previous, trail, cities, live }: Prop
         attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, USGS, NGA, EPA, USDA, NPS",
       }).addTo(map);
 
-      const footprint = L.circle([0, 0], { radius: 1, color: "#38e1ff", weight: 2, fillColor: "#38e1ff", fillOpacity: 0.12 }).addTo(map);
-      const trailLine = L.polyline([], { color: "#7c3aed", weight: 3, opacity: 0.8, dashArray: "6 6" }).addTo(map);
+      const footprint = L.circle([0, 0], { radius: 1, color: "#5ce6ff", weight: 2, fillColor: "#5ce6ff", fillOpacity: 0.12 }).addTo(map);
+      const trailLine = L.polyline([], { color: "#8b5cf6", weight: 3, opacity: 0.8, dashArray: "6 6" }).addTo(map);
       const cityLayer = L.layerGroup().addTo(map);
       const marker = L.marker([0, 0], {
         icon: L.divIcon({ className: "", html: '<div class="iss-marker"></div>', iconSize: [18, 18], iconAnchor: [9, 9] }),
@@ -160,20 +161,27 @@ export default function IssMap({ position, previous, trail, cities, live }: Prop
       <div className={`h-full w-full transition-[filter] duration-700 ${live ? "" : "grayscale-[70%] brightness-75"}`}>
         <div ref={containerRef} className="h-full w-full" role="region" aria-label="Live map of the International Space Station" />
       </div>
+      {/* Desktop: the key is always shown. Phones: a small toggle, so it doesn't cover the map. */}
       <ul
-        aria-label="Map legend"
-        className="pointer-events-none absolute bottom-3 left-3 z-[1000] space-y-1 rounded-xl bg-space-900/85 px-3 py-2 text-xs text-star shadow-lg ring-1 ring-cyan/30"
+        aria-label="Map key"
+        className="pointer-events-none absolute bottom-3 left-3 z-[1000] hidden space-y-1 rounded-xl bg-surface/95 px-3 py-2 text-sm text-text shadow-lg ring-1 ring-line/60 sm:block"
       >
         <li className="flex items-center gap-2"><span className="iss-marker !size-3 !border-2 !animate-none" aria-hidden /> ISS{live ? " (smoothed between updates)" : ", last known position"}</li>
-        <li className="flex items-center gap-2"><span className="inline-block size-3 rounded-full border-2 border-cyan bg-cyan/20" aria-hidden /> Visible from here (ISS above the horizon)</li>
-        <li className="flex items-center gap-2"><span className="inline-block h-0 w-3 border-t-2 border-dashed border-[#7c3aed]" aria-hidden /> Path, last hour</li>
+        <li className="flex items-center gap-2"><span className="inline-block size-3 rounded-full border-2 border-cyan bg-cyan/25" aria-hidden /> Visible from here (ISS above the horizon)</li>
+        <li className="flex items-center gap-2"><span className="inline-block h-0 w-3 border-t-2 border-dashed border-violet" aria-hidden /> Path, last hour</li>
         <li className="flex items-center gap-2"><span className="city-pin !size-2.5" aria-hidden /> Your cities <span className="city-pin overhead !size-2.5" aria-hidden /> overhead</li>
       </ul>
+      <details className="absolute bottom-3 left-3 z-[1000] max-w-[80%] rounded-xl bg-surface/95 text-sm text-text shadow-lg ring-1 ring-line/60 sm:hidden">
+        <summary className={`cursor-pointer list-none rounded-xl px-3 py-2 font-semibold ${focusRing}`}>Map key</summary>
+        <ul className="space-y-1 px-3 pb-2">
+        <li className="flex items-center gap-2"><span className="iss-marker !size-3 !border-2 !animate-none" aria-hidden /> ISS{live ? " (smoothed between updates)" : ", last known position"}</li>
+          <li className="flex items-center gap-2"><span className="inline-block size-3 rounded-full border-2 border-cyan bg-cyan/25" aria-hidden /> Visible from here (ISS above the horizon)</li>
+          <li className="flex items-center gap-2"><span className="inline-block h-0 w-3 border-t-2 border-dashed border-violet" aria-hidden /> Path, last hour</li>
+          <li className="flex items-center gap-2"><span className="city-pin !size-2.5" aria-hidden /> Your cities <span className="city-pin overhead !size-2.5" aria-hidden /> overhead</li>
+        </ul>
+      </details>
       {!followIss && (
-        <button
-          onClick={() => setFollowIss(true)}
-          className="absolute right-3 bottom-3 z-[1000] rounded-full bg-space-900/90 px-4 py-2 text-sm font-semibold text-gold shadow-lg ring-1 ring-gold/50 hover:bg-space-800 focus-visible:outline-2 focus-visible:outline-gold"
-        >
+        <button onClick={() => setFollowIss(true)} className={`absolute right-3 bottom-8 z-[1000] ${buttonClass("primary", "md")}`}>
           ◎ Follow the ISS
         </button>
       )}

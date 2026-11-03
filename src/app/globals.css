@@ -1,20 +1,33 @@
 @import "tailwindcss";
 
-/* "Bright mission control" (D6): a deep-space frame with bright accents
-   around a clean, colorful map. */
+/* ISS Flyover design system: "bright mission control" (D6).
+   Tokens are semantic: use bg/surface/raised for layers, text/muted for words,
+   accents for actions, fresh/stale/down only for data state.
+   tests/design-tokens.test.ts checks these pairs meet WCAG AA, so change a
+   value there and the test tells you if it got too faint. See docs/design-system.md. */
 @theme {
-  --color-space-950: #090d2b;
-  --color-space-900: #111747;
-  --color-space-800: #1b2363;
-  --color-space-700: #2a3486;
-  --color-star: #e6ebff;
-  --color-dim: #a9b3e6;
-  --color-cyan: #38e1ff;
-  --color-magenta: #ff6fd0;
-  --color-gold: #ffd34d;
-  --color-fresh: #3ef0a1;
-  --color-stale: #ffc53d;
-  --color-down: #ff6b6b;
+  /* Layers, darkest to lightest. Surfaces are solid: no stars or map behind text. */
+  --color-bg: #0a1036;
+  --color-surface: #18226b;
+  --color-raised: #24308a;
+  --color-hover: #4050c0;     /* ghost-button hover fill: clearly lighter than surface */
+  --color-line: #6b7af0;      /* borders and dividers that must be visible (3:1) */
+
+  /* Words */
+  --color-text: #ffffff;
+  --color-muted: #cdd4ff;     /* secondary text, still 9.8:1 on surface */
+  --color-ink: #0a1036;       /* text on bright fills (buttons, pills) */
+
+  /* Accents: one job each */
+  --color-gold: #ffd84d;      /* the ISS, primary actions, focus ring */
+  --color-cyan: #5ce6ff;      /* footprint, links, secondary hover fill */
+  --color-magenta: #ff85dd;   /* the user's cities */
+  --color-violet: #8b5cf6;    /* the trail (map only, never text) */
+
+  /* Data state: only for freshness and "overhead" */
+  --color-fresh: #52f5ad;
+  --color-stale: #ffcc4d;
+  --color-down: #ff8585;
 
   --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
@@ -25,7 +38,7 @@ html {
 }
 
 body {
-  background-color: var(--color-space-950);
+  background-color: var(--color-bg);
   /* Nebula glow plus a few layers of tiny stars. */
   background-image:
     radial-gradient(ellipse at 15% 10%, rgb(124 58 237 / 0.35), transparent 55%),
@@ -36,16 +49,7 @@ body {
     radial-gradient(1px 1px at 200px 120px, #ffe9a8, transparent);
   background-size: 100% 100%, 100% 100%, 240px 200px, 240px 200px, 240px 200px, 240px 200px;
   background-attachment: fixed;
-  color: var(--color-star);
-}
-
-/* Panels: frosted glass over the starfield. */
-.panel {
-  background: color-mix(in srgb, var(--color-space-900) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-cyan) 22%, transparent);
-  border-radius: 1rem;
-  box-shadow: 0 0 24px rgb(56 225 255 / 0.08), inset 0 1px 0 rgb(255 255 255 / 0.04);
-  backdrop-filter: blur(6px);
+  color: var(--color-text);
 }
 
 /* The ISS marker on the map: a glowing gold dot with a pulse. */
@@ -55,11 +59,11 @@ body {
   border-radius: 9999px;
   background: var(--color-gold);
   border: 3px solid #fff;
-  box-shadow: 0 0 0 0 rgb(255 211 77 / 0.7), 0 0 16px var(--color-gold);
+  box-shadow: 0 0 0 0 rgb(255 216 77 / 0.7), 0 0 16px var(--color-gold);
   animation: iss-pulse 2s ease-out infinite;
 }
 @keyframes iss-pulse {
-  to { box-shadow: 0 0 0 18px rgb(255 211 77 / 0), 0 0 16px var(--color-gold); }
+  to { box-shadow: 0 0 0 18px rgb(255 216 77 / 0), 0 0 16px var(--color-gold); }
 }
 @media (prefers-reduced-motion: reduce) {
   .iss-marker { animation: none; }

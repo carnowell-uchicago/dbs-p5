@@ -1,4 +1,5 @@
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import { buttonClass } from "@/components/ui";
 
 // Front page for signed-out visitors (signed-in users are sent to /live by src/proxy.ts).
 export default function Home() {
@@ -8,18 +9,18 @@ export default function Home() {
       <h1 className="text-4xl font-bold leading-tight sm:text-6xl">
         Is the space station <span className="text-gold">over your city</span> right now?
       </h1>
-      <p className="max-w-xl text-lg text-dim">
+      <p className="max-w-xl text-lg text-muted">
         The ISS circles Earth every 92 minutes at 27,600 km/h. Follow the cities you care about and watch it pass
         over them on a live map, with no refreshing.
       </p>
       <div className="flex gap-3">
         <SignUpButton>
-          <button className="rounded-full bg-cyan px-6 py-3 font-semibold text-space-950 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan">
+          <button className={buttonClass("primary", "md")}>
             Start tracking
           </button>
         </SignUpButton>
         <SignInButton>
-          <button className="rounded-full border border-cyan/40 px-6 py-3 font-semibold hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan">
+          <button className={buttonClass("secondary", "md")}>
             Sign in
           </button>
         </SignInButton>

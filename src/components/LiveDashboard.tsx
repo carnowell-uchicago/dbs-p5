@@ -10,11 +10,12 @@ import { formatAge, freshness, type Freshness } from "@/lib/freshness";
 import { useSupabase } from "@/lib/supabase/client";
 import type { City, CityStatus, IssPosition, WorkerRun } from "@/lib/supabase/database.types";
 import type { MapCity } from "./IssMap";
+import { Button, Eyebrow, Panel, StatusPill, type Tone } from "./ui";
 
 // Leaflet needs `window`, so the map renders in the browser only.
 const IssMap = dynamic(() => import("./IssMap"), {
   ssr: false,
-  loading: () => <div className="h-full animate-pulse rounded-2xl bg-space-800/60" />,
+  loading: () => <div className="h-full animate-pulse rounded-2xl bg-surface" />,
 });
 
 const TRAIL_POINTS = 360; // 1 hour at one point per 10 s (about 2/3 of an orbit)
@@ -150,32 +151,32 @@ export default function LiveDashboard() {
 
   if (loadError) {
     return (
-      <div className="panel mx-auto mt-16 max-w-md p-6 text-center">
+      <Panel className="mx-auto mt-16 max-w-md text-center">
         <p className="text-lg font-semibold text-down">Couldn&apos;t load the live data</p>
-        <p className="mt-2 font-mono text-sm text-dim">{loadError}</p>
-        <button onClick={() => { setLoadError(null); setReloadKey((k) => k + 1); }} className="mt-4 rounded-full bg-cyan px-5 py-2 font-semibold text-space-950 hover:bg-white">
+        <p className="mt-2 font-mono text-sm text-muted">{loadError}</p>
+        <Button variant="primary" className="mt-4" onClick={() => { setLoadError(null); setReloadKey((k) => k + 1); }}>
           Try again
-        </button>
-      </div>
+        </Button>
+      </Panel>
     );
   }
 
   return (
     // Desktop: exactly one screen tall (minus header and footer); the city list
     // scrolls inside its panel, so the map never stretches. Phones: map 60vh, page scrolls.
-    <div className="mx-auto grid w-full max-w-7xl gap-4 p-4 sm:p-6 lg:h-[calc(100dvh-6.5rem)] lg:min-h-[34rem] lg:grid-cols-[1fr_22rem]">
+    <div className="mx-auto grid w-full max-w-7xl gap-4 p-4 sm:p-6 lg:h-[calc(100dvh-6.5rem)] lg:min-h-[36rem] lg:grid-cols-[1fr_24rem]">
       <section className="relative flex h-[60vh] flex-col lg:h-full">
         <IssMap position={latest} previous={previous} trail={trail} cities={mapCities} live={fresh.state === "fresh"} />
+        <Telemetry position={latest} loading={!loaded} />
         {fresh.state === "loading" && (
-          <p className="pointer-events-none absolute inset-0 z-[1000] flex items-center justify-center font-mono text-sm text-star">
-            Locating the ISS…
+          <p className="pointer-events-none absolute inset-0 z-[1000] flex items-center justify-center">
+            <span className="rounded-full bg-surface px-4 py-2 font-mono text-sm text-text shadow-lg">Locating the ISS…</span>
           </p>
         )}
       </section>
 
       <aside className="flex min-h-0 flex-col gap-4">
         <FreshnessPanel state={fresh.state} ageS={fresh.ageS} lastRun={lastRun} connection={connection} />
-        <Telemetry position={latest} loading={!loaded} />
         <CitiesPanel
           loading={!loaded}
           myCities={myCities}
@@ -189,73 +190,62 @@ export default function LiveDashboard() {
   );
 }
 
-const STATE_STYLE: Record<Freshness, { dot: string; label: string; text: string }> = {
-  loading: { dot: "bg-dim", label: "Connecting", text: "text-dim" },
-  fresh: { dot: "bg-fresh shadow-[0_0_10px_var(--color-fresh)]", label: "Live", text: "text-fresh" },
-  stale: { dot: "bg-stale shadow-[0_0_10px_var(--color-stale)]", label: "Stale", text: "text-stale" },
-  down: { dot: "bg-down shadow-[0_0_10px_var(--color-down)]", label: "Source down", text: "text-down" },
+const STATE: Record<Freshness, { tone: Tone; label: string }> = {
+  loading: { tone: "neutral", label: "Connecting" },
+  fresh: { tone: "fresh", label: "Live" },
+  stale: { tone: "stale", label: "Stale" },
+  down: { tone: "down", label: "Source down" },
 };
 
 function FreshnessPanel({ state, ageS, lastRun, connection }: { state: Freshness; ageS: number | null; lastRun: WorkerRun | null; connection: string }) {
-  const style = STATE_STYLE[state];
+  const { tone, label } = STATE[state];
   return (
-    <section className="panel p-4" aria-live="polite" aria-label="Data freshness">
-      <div className="flex items-center justify-between">
-        <p className={`flex items-center gap-2 font-semibold ${style.text}`}>
-          <span aria-hidden className={`inline-block size-3 rounded-full ${style.dot} ${state === "fresh" ? "animate-pulse" : ""}`} />
-          {style.label}
-        </p>
-        <p className="font-mono text-sm text-star">{state === "loading" ? "…" : `Updated ${formatAge(ageS)}`}</p>
+    <Panel aria-live="polite" aria-label="Data freshness" className={state === "down" ? "border-down" : state === "stale" ? "border-stale" : ""}>
+      <div className="flex items-center justify-between gap-3">
+        <StatusPill tone={tone} pulse={state === "fresh"}>{label}</StatusPill>
+        <p className="font-mono text-base text-text">{state === "loading" ? "…" : `Updated ${formatAge(ageS)}`}</p>
       </div>
-      <p className="mt-2 text-sm text-dim">
+      <p className="mt-3 text-sm leading-relaxed text-muted">
         {state === "loading" && "Fetching the latest position…"}
-        {state === "fresh" && "New position every 10 seconds. The map moves on its own."}
-        {state === "stale" && "No new position for 3+ runs. The worker may be paused; showing the last known position."}
+        {state === "fresh" && "A new position arrives every 10 seconds; between updates the dot glides on its own."}
+        {state === "stale" && "No new position for 3+ runs. The worker may be paused, so the map shows the last known position."}
         {state === "down" && (
           <>
-            The last update failed{lastRun ? ` at ${new Date(lastRun.ran_at).toLocaleTimeString()}` : ""}. Showing the last known
-            position.
-            {lastRun?.error && <span className="mt-1 block font-mono text-xs text-down/90">{lastRun.error}</span>}
+            The last update failed{lastRun ? ` at ${new Date(lastRun.ran_at).toLocaleTimeString()}` : ""}. The map shows the last
+            known position.
+            {lastRun?.error && <span className="mt-2 block rounded-lg bg-raised px-3 py-2 font-mono text-sm text-down">{lastRun.error}</span>}
           </>
         )}
       </p>
       {connection !== "SUBSCRIBED" && state !== "loading" && (
-        <p className="mt-2 font-mono text-xs text-stale">Live connection: {connection.toLowerCase().replaceAll("_", " ")}</p>
+        <p className="mt-2 font-mono text-sm text-stale">Live connection: {connection.toLowerCase().replaceAll("_", " ")}</p>
       )}
-    </section>
+    </Panel>
   );
 }
 
+// Heads-up strip on top of the map: the real, measured values (never the smoothed guess).
 function Telemetry({ position, loading }: { position: IssPosition | null; loading: boolean }) {
-  const rows: [string, string][] = position
-    ? [
-        ["Latitude", `${position.latitude.toFixed(2)}°`],
-        ["Longitude", `${position.longitude.toFixed(2)}°`],
-        ["Altitude", `${Math.round(position.altitude_km)} km`],
-        ["Speed", `${Math.round(position.velocity_kmh).toLocaleString()} km/h`],
-        ["Sunlight", position.visibility === "daylight" ? "☀ Sunlit" : "☾ In Earth's shadow"],
-      ]
-    : [];
+  if (loading || !position) return null;
+  const items: [string, string][] = [
+    ["Lat", `${position.latitude.toFixed(2)}°`],
+    ["Lon", `${position.longitude.toFixed(2)}°`],
+    ["Alt", `${Math.round(position.altitude_km)} km`],
+    ["Speed", `${Math.round(position.velocity_kmh).toLocaleString()} km/h`],
+    ["Sun", position.visibility === "daylight" ? "☀ Sunlit" : "☾ Shadow"],
+  ];
   return (
-    <section className="panel p-4" aria-label="ISS telemetry">
-      <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-cyan">Telemetry</h2>
-      {loading ? (
-        <div className="mt-3 space-y-2" aria-hidden>
-          {[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-4 animate-pulse rounded bg-space-800" />)}
+    <dl
+      aria-label="ISS telemetry"
+      className="pointer-events-none absolute top-3 right-3 left-14 z-[1000] flex flex-wrap justify-end gap-x-5 gap-y-1 rounded-xl bg-surface/95 px-4 py-2 font-mono text-sm shadow-lg ring-1 ring-line/60"
+    >
+      {items.map(([label, value]) => (
+        <div key={label} className="flex gap-2">
+          <dt className="text-muted">{label}</dt>
+          <dd className="font-semibold text-text">{value}</dd>
         </div>
-      ) : !position ? (
-        <p className="mt-3 text-sm text-dim">No position recorded yet.</p>
-      ) : (
-        <dl className="mt-3 grid grid-cols-2 gap-y-1.5 font-mono text-sm">
-          {rows.map(([label, value]) => (
-            <div key={label} className="contents">
-              <dt className="text-dim">{label}</dt>
-              <dd className="text-right text-star">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-    </section>
+      ))}
+    </dl>
   );
 }
 
@@ -271,52 +261,14 @@ function CitiesPanel(props: {
 }) {
   const [choice, setChoice] = useState("");
   return (
-    <section className="panel flex min-h-0 flex-1 flex-col p-4" aria-label="Your cities">
-      <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-cyan">Your cities</h2>
-
-      {props.loading ? (
-        <div className="mt-3 space-y-2" aria-hidden>
-          {[0, 1].map((i) => <div key={i} className="h-12 animate-pulse rounded-lg bg-space-800" />)}
-        </div>
-      ) : props.myCities.length === 0 ? (
-        <p className="mt-3 text-sm text-dim">Follow a city below to see how far the ISS is from it, and when it passes overhead.</p>
-      ) : (
-        <ul className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-          {props.myCities.map((city) => (
-            <li
-              key={city.id}
-              className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${city.status?.overhead ? "bg-fresh/15 ring-1 ring-fresh/60" : "bg-space-800/70"}`}
-            >
-              <div className="min-w-0">
-                <p className="truncate font-semibold">
-                  {city.name} <span className="text-xs font-normal text-dim">{city.country}</span>
-                </p>
-                <p className="font-mono text-xs text-dim">
-                  {city.distance !== null && `${Math.round(city.distance).toLocaleString()} km away · `}
-                  {city.status?.overhead ? (
-                    <span className="font-semibold text-fresh">Overhead now</span>
-                  ) : city.status?.last_overhead_at ? (
-                    `last overhead ${new Date(city.status.last_overhead_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
-                  ) : (
-                    "not overhead yet"
-                  )}
-                </p>
-              </div>
-              <button
-                onClick={() => props.onUnfollow(city.id)}
-                className="shrink-0 rounded-full px-2 py-1 text-dim hover:bg-white/10 hover:text-star focus-visible:outline-2 focus-visible:outline-cyan"
-                aria-label={`Unfollow ${city.name}`}
-                title="Unfollow"
-              >
-                ✕
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+    <Panel aria-label="Your cities" className="flex min-h-[18rem] flex-1 flex-col">
+      <div className="flex items-baseline justify-between">
+        <Eyebrow>Your cities</Eyebrow>
+        {props.myCities.length > 0 && <span className="text-sm text-muted">nearest first</span>}
+      </div>
 
       <form
-        className="mt-4 flex gap-2"
+        className="mt-3 flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           if (choice) props.onFollow(choice);
@@ -329,22 +281,57 @@ function CitiesPanel(props: {
           value={choice}
           onChange={(e) => setChoice(e.target.value)}
           disabled={props.loading || props.others.length === 0}
-          className="min-w-0 flex-1 rounded-full border border-cyan/30 bg-space-950 px-3 py-2 text-sm text-star focus-visible:outline-2 focus-visible:outline-cyan"
+          className="h-11 min-w-0 flex-1 rounded-full border-2 border-line bg-raised px-4 text-base text-text hover:border-cyan focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-gold"
         >
           <option value="">Add a city…</option>
           {props.others.map((c) => (
             <option key={c.id} value={c.id}>{c.name}, {c.country}</option>
           ))}
         </select>
-        <button
-          type="submit"
-          disabled={!choice}
-          className="rounded-full bg-magenta px-4 py-2 text-sm font-semibold text-space-950 hover:bg-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-magenta"
-        >
-          Follow
-        </button>
+        <Button type="submit" variant="primary" disabled={!choice}>Follow</Button>
       </form>
       {props.error && <p role="alert" className="mt-2 text-sm text-down">{props.error}</p>}
-    </section>
+
+      {props.loading ? (
+        <div className="mt-4 space-y-2" aria-hidden>
+          {[0, 1].map((i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-raised" />)}
+        </div>
+      ) : props.myCities.length === 0 ? (
+        <p className="mt-4 text-base leading-relaxed text-muted">
+          Pick a city above to see how far the ISS is from it, and get a green light when it passes overhead.
+        </p>
+      ) : (
+        <ul className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+          {props.myCities.map((city) => (
+            <li
+              key={city.id}
+              className={`flex items-center justify-between gap-3 rounded-xl border-2 px-3 py-2.5 ${
+                city.status?.overhead ? "border-fresh bg-raised" : "border-transparent bg-raised"
+              }`}
+            >
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold text-text">
+                  {city.name} <span className="text-sm font-normal text-muted">{city.country}</span>
+                </p>
+                <p className="mt-0.5 font-mono text-sm text-muted">
+                  {city.distance !== null && `${Math.round(city.distance).toLocaleString()} km`}
+                  {" · "}
+                  {city.status?.overhead ? (
+                    <span className="font-bold text-fresh">● Overhead now</span>
+                  ) : city.status?.last_overhead_at ? (
+                    `last overhead ${new Date(city.status.last_overhead_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
+                  ) : (
+                    "not overhead yet"
+                  )}
+                </p>
+              </div>
+              <Button variant="danger" size="icon" onClick={() => props.onUnfollow(city.id)} aria-label={`Unfollow ${city.name}`} title="Unfollow">
+                ✕
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }
